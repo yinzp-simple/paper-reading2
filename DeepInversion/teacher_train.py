@@ -33,7 +33,7 @@ class TeacherTrainer:
             self.dataset_test_loader = DataLoader(self.dataset_test, batch_size=100, num_workers=0)
             
             self.net = resnet.ResNet34().cuda()
-            #self.net = nn.DataParallel(self.net,device_ids=[0,1,2,3], output_device=0)
+            self.net = nn.DataParallel(self.net,device_ids=[0,1,2,3], output_device=0)
             self.criterion = torch.nn.CrossEntropyLoss().cuda()
             self.optimizer = torch.optim.SGD(self.net.parameters(), lr=0.1, momentum=0.9, weight_decay=5e-4)
             self.lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer, epochs)
@@ -59,7 +59,7 @@ class TeacherTrainer:
             self.net.train()
             loss_epoch = 0
             for i, (batch_img, batch_label) in enumerate(self.dataset_train_loader, start=1):
-                batch_img, batch_label = Variable(batch_img).cuda(), Variable(batch_label).cuda()
+                batch_img, batch_label = Variable(batch_img).cuda(non_blocking=True), Variable(batch_label).cuda(non_blocking=True)
                 self.optimizer.zero_grad()
                 output = self.net(batch_img)
                 loss = self.criterion(output, batch_label)
@@ -76,21 +76,12 @@ class TeacherTrainer:
         if save:
             print("Saving ckpt and loss data")
             # 保存权重
-            filename = self.path_ckpt + 'Resnet34_accr%f_epoch%d.pth'%(self.best_accr, epoch)
+            filename = self.path_ckpt + 'Resnet34_ac%f_epoch%d.pth'%(self.best_accr, self.best_state['epoch'])
             torch.save(self.best_state, filename)
             # 保存损失
             lossfile = np.array(self.list_loss)
-            np.save(self.path_loss + '/teacher_loss_{}'.format(self.epochs), lossfile)
+            np.save(self.path_loss + '/loss_{}'.format(self.epochs), lossfile)
         print("Finish Training")
-    def adjust_lr(self, epoch):
-        if epoch < 80:
-            lr = 0.1
-        if epoch < 120:
-            lr = 0.01
-        else:
-            lr = 0.001
-        for param_group in self.optimizer.param_groups:## ??
-            param_group['lr'] = lr
 
     def test(self, epoch):
         self.net.eval()
@@ -118,10 +109,11 @@ class TeacherTrainer:
 
   
 if __name__ == "__main__":
-    os.environ["CUDA_VISIBLE_DEVICES"] = '1,2'
+    os.environ["CUDA_VISIBLE_DEVICES"] = '0,1,2,3'
     path_current = os.getcwd()
     path_ckpt = os.path.join(path_current, 'paper-reading/DeepInversion/cache/models/teacher/')
     path_loss = os.path.join(path_current,'paper-reading/DeepInversion/cache/experimental_data/')
     path_cifar = "/home/ubuntu/datasets/"
-    train_teacher = TeacherTrainer(path_ckpt, path_loss, path_cifar, epochs=300, bs=128, num_epochsaving=150)
+    train_teacher = TeacherTrainer(path_ckpt, path_loss, path_cifar, 
+                                   epochs=500, bs=1024, num_epochsaving=150)
     train_teacher.train()
