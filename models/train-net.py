@@ -71,12 +71,21 @@ class NetTrainer:
                                 ]))
 
             self.dataset_train_loader = DataLoader(self.dataset_train, batch_size=256, shuffle=True, num_workers=8)
-            self.dataset_test_loader = DataLoader(self.dataset_test, batch_size=1024, num_workers=8)
+            self.dataset_test_loader = DataLoader(self.dataset_test, batch_size=128, num_workers=8)
 
-            self.net = LeNet5Half().cuda()
+            self.net = LeNet5().cuda()
             self.criterion = torch.nn.CrossEntropyLoss().cuda()
-            self.optimizer = torch.optim.Adam(self.net.parameters(), lr=0.001)
+            self.optimizer = torch.optim.SGD(self.net.parameters(), lr=0.01, weight_decay=1e-4, momentum=0.9)
+            #self.optimizer = torch.optim.Adam(self.net.parameters(), lr=0.001)
             self.lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, [10, 20], gamma=0.1)
+        if name_dataset != 'mnist':
+            transform_test = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize((0.4914, 0.4822, 0.4465), 
+                                 (0.2023, 0.1994, 0.2010)),])
+            if name_dataset == 'cifar10':
+            if name_dataset == 'cifar100':
+                
             
 		
         
@@ -99,14 +108,15 @@ class NetTrainer:
             print('Train-Epoch:%d, Loss:%f, Lr:%f'%(epoch, loss_epoch, self.lr_scheduler.get_last_lr()[0]))
             # 测试
             self.test(epoch)
+        print("Best accuracy:{:.3f}".format(100*self.best_accr))
         if save:
             print("Saving ckpt and loss data")
             # 保存权重
-            filename = self.path_ckpt + 'LeNet5Half_ac%f_epoch%d.pth'%(self.best_accr, self.best_state['epoch'])
+            filename = self.path_ckpt + 'LeNet5-sgd-ac%f-epoch%d.pth'%(self.best_accr, self.best_state['epoch'])
             torch.save(self.best_state, filename)
             # 保存损失
             lossfile = np.array(self.list_loss)
-            np.save(self.path_loss + '/LeNet5Half_loss_{}'.format(self.epochs), lossfile)
+            np.save(self.path_loss + '/LeNet5_loss_{}'.format(self.epochs), lossfile)
         print("Finish Training!Good Luck!:)")
 
     def test(self, epoch):
@@ -135,13 +145,13 @@ class NetTrainer:
 
   
 if __name__ == "__main__":
-    os.environ["CUDA_VISIBLE_DEVICES"] = '0,1,2,3'
+    os.environ["CUDA_VISIBLE_DEVICES"] = '0'
     path_current = os.getcwd()
     # path_ckpt = os.path.join(path_current, 'paper-reading/DeepInversion/cache/models/teacher/')
     # path_loss = os.path.join(path_current,'paper-reading/DeepInversion/cache/experimental_data/')
     path_dataset = "/home/ubuntu/datasets/"
-    path_ckpt = "/home/ubuntu/YZP/gitee/models/ckpt/"
-    path_loss = path_ckpt
+    path_ckpt = "/home/ubuntu/YZP/gitee/paper-reading/models/ckpt/"
+    path_loss = "/home/ubuntu/YZP/gitee/paper-reading/models/ckpt/lossfile/"
     train_teacher = NetTrainer(path_ckpt, path_loss, path_dataset, 
-                                   epochs=50, name_dataset='mnist', bs=1024)
+                                   epochs=10, name_dataset='mnist', bs=1024)
     train_teacher.train()
