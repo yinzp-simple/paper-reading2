@@ -17,7 +17,7 @@ import random
 
 class NetTrainer:
     def __init__(self, path_ckpt, path_loss, path_dataset, epochs=10, name_dataset='cifar10', 
-				 bs=512, num_epochsaving=100, resume_train=False, path_resume=None):
+				 bs=256, num_epochsaving=100, resume_train=False, path_resume=None):
         # 训练相关参数
         self.last_epoch = 0
         self.epochs = epochs
@@ -70,21 +70,21 @@ class NetTrainer:
                                 transforms.Normalize((0.1307,), (0.3081,))
                                 ]))
 
-            self.dataset_train_loader = DataLoader(self.dataset_train, batch_size=256, shuffle=True, num_workers=8)
+            self.dataset_train_loader = DataLoader(self.dataset_train, batch_size=bs, shuffle=True, num_workers=8)
             self.dataset_test_loader = DataLoader(self.dataset_test, batch_size=128, num_workers=8)
 
             self.net = LeNet5().cuda()
             self.criterion = torch.nn.CrossEntropyLoss().cuda()
             self.optimizer = torch.optim.SGD(self.net.parameters(), lr=0.01, weight_decay=1e-4, momentum=0.9)
             #self.optimizer = torch.optim.Adam(self.net.parameters(), lr=0.001)
-            self.lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optimizer, [10, 20], gamma=0.1)
+            self.lr_scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, 50, gamma=0.1)
         if name_dataset != 'mnist':
             transform_test = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize((0.4914, 0.4822, 0.4465), 
                                  (0.2023, 0.1994, 0.2010)),])
-            if name_dataset == 'cifar10':
-            if name_dataset == 'cifar100':
+            #if name_dataset == 'cifar10':
+            #if name_dataset == 'cifar100':
                 
             
 		
@@ -145,7 +145,7 @@ class NetTrainer:
 
   
 if __name__ == "__main__":
-    os.environ["CUDA_VISIBLE_DEVICES"] = '0'
+    os.environ["CUDA_VISIBLE_DEVICES"] = '1'
     path_current = os.getcwd()
     # path_ckpt = os.path.join(path_current, 'paper-reading/DeepInversion/cache/models/teacher/')
     # path_loss = os.path.join(path_current,'paper-reading/DeepInversion/cache/experimental_data/')
@@ -153,5 +153,5 @@ if __name__ == "__main__":
     path_ckpt = "/home/ubuntu/YZP/gitee/paper-reading/models/ckpt/"
     path_loss = "/home/ubuntu/YZP/gitee/paper-reading/models/ckpt/lossfile/"
     train_teacher = NetTrainer(path_ckpt, path_loss, path_dataset, 
-                                   epochs=10, name_dataset='mnist', bs=1024)
+                                   epochs=10, name_dataset='mnist', bs=256)
     train_teacher.train()

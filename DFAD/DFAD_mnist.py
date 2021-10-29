@@ -87,8 +87,7 @@ class DaflTrainer:
             self.test(epoch)
             self.loss_list_S.append(loss_S_epoch)
             self.loss_list_G.append(loss_G_epoch)
-        print("Best Accuracy:{:.3f}%".format(100*self.best_accr))
-        print("Saving ckpt and loss data")
+        print("Best Accuracy:{:.3f}%,from ep{}".format(100*self.best_accr,self.best_state['epoch']))
         # 保存权重
         filename = self.path_ckpt_student + 'DFAD_LeNet5Half_ac%f_epoch%d.pth'%(self.best_accr, self.best_state['epoch'])
         torch.save(self.best_state, filename)
@@ -98,7 +97,7 @@ class DaflTrainer:
         np.save(self.path_loss + flag_save+'GeneratorA_loss_{}'.format(self.epochs), lossfile_G)
        
         
-        print("Finish Training!Good Luck!:)")
+        print("Finish Training!")
     
     def test(self, epoch):
         self.student.eval()
@@ -124,17 +123,16 @@ class DaflTrainer:
             
 
 if __name__ == "__main__":
-    os.environ["CUDA_VISIBLE_DEVICES"] = '3'
+    os.environ["CUDA_VISIBLE_DEVICES"] = '2'
     path_current = os.getcwd()
     # path_ckpt = os.path.join(path_current, 'paper-reading/DeepInversion/cache/models/teacher/')
     # path_loss = os.path.join(path_current,'paper-reading/DeepInversion/cache/experimental_data/')
     path_dataset = "/home/ubuntu/datasets/"
     path_ckpt_save = "/home/ubuntu/YZP/gitee/paper-reading/models/ckpt/"
-    path_ckpt_teacher = "/home/ubuntu/YZP/gitee/paper-reading/models/ckpt/LeNet5-sgd-ac0.989100-epoch8.pth"
+    path_ckpt_teacher = "/home/ubuntu/YZP/gitee/checkpoint/teacher/mnist-lenet5-ep24.pt"
     path_loss = "/home/ubuntu/YZP/gitee/paper-reading/models/ckpt/lossfile/"
     train = DaflTrainer(epochs=40, bs=512, path_ckpt_teacher=path_ckpt_teacher, path_ckpt_student=path_ckpt_save, 
                         path_dataset=path_dataset, path_loss=path_loss)
-    train.train(flag_save="10")
-                
+    train.train(flag_save="13_c")
         
         
